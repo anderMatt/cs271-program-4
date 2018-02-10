@@ -24,6 +24,7 @@ printTotal		DWORD	?		;number of composite numbers user wants us to print
 printCount		DWORD	0		;number of composite numbers we have already printed.
 
 gutter			BYTE	"   ",0	
+goodbye			BYTE	"Goodbye!", 0
 
 
 ;---------------------------
@@ -41,8 +42,7 @@ main PROC
 	call	GetUserData
 	call	Initialize
 	call	PrintComposites
-	; TODO: call Farewell
-
+	call	Farewell
 
 	exit	; exit to operating system
 main ENDP
@@ -233,5 +233,15 @@ done:
 Print ENDP
 
 
+;--------------------------------------------------
+Farewell PROC
+; Prints farewell message to the user, and exits
+;--------------------------------------------------
+	call	CrLf
+	mov		edx, OFFSET goodbye
+	call	WriteString
+	call	CrLf
+	ret
 
+Farewell ENDP
 END main
