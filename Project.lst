@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/10/18 11:13:37
+Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/10/18 14:51:40
 Program 4     (program4.asm				     Page 1 - 1
 
 
@@ -73,65 +73,104 @@ Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/10/18 11:13:37
 	   79 20 61 67 61
 	   69 6E 3A 20 00
 
+ 000000B5 00000003		currNum			DWORD	3
+ 000000B9 00000000		printTotal		DWORD	?		;number of composite numbers user wants us to print
+ 000000BD 00000000		printCount		DWORD	0		;number of composite numbers we have already printed.
+
+ 000000C1 20 20 20 00		gutter			BYTE	"   ",0	
+
+
+				;---------------------------
+				; FOR TESTING
+				;---------------------------
+ 000000C5 74 68 61 74 20	yesStr BYTE "that IS composite", 0
+	   49 53 20 63 6F
+	   6D 70 6F 73 69
+	   74 65 00
+ 000000D7 74 68 61 74 20	noStr BYTE	"that is NOT composite", 0
+	   69 73 20 4E 4F
+	   54 20 63 6F 6D
+	   70 6F 73 69 74
+	   65 00
 
 
  00000000			.code
  00000000			main PROC
 
 				; (insert executable instructions here)
- 00000000  E8 0000000C			call	Introduction
- 00000005  E8 00000026			call	GetUserData
+ 00000000  E8 00000016			call	Introduction
+ 00000005  E8 00000030			call	GetUserData
+ 0000000A  E8 0000004E			call	Initialize
+ 0000000F  E8 0000008E			call	PrintComposites
+					; TODO: call Farewell
+
 
 					exit	; exit to operating system
- 0000000A  6A 00	   *	    push   +000000000h
- 0000000C  E8 00000000 E   *	    call   ExitProcess
- 00000011			main ENDP
+ 00000014  6A 00	   *	    push   +000000000h
+ 00000016  E8 00000000 E   *	    call   ExitProcess
+ 0000001B			main ENDP
 
 				; (insert additional procedures here)
 
 				;---------------------------------------------
- 00000011			Introduction PROC
+ 0000001B			Introduction PROC
 				;
 				; Prints a greeting message and 
 				; instructions to user
 				;
 				;---------------------------------------------
- 00000011  BA 00000000 R		mov		edx, OFFSET programName
- 00000016  E8 00000000 E		call	WriteString
- 0000001B  E8 00000000 E		call	CrLf
- 00000020  BA 0000001C R		mov		edx, OFFSET myName
- 00000025  E8 00000000 E		call	WriteString
- 0000002A  E8 00000000 E		call	CrLf
- 0000002F  C3				ret
- 00000030			Introduction ENDP
+ 0000001B  BA 00000000 R		mov		edx, OFFSET programName
+ 00000020  E8 00000000 E		call	WriteString
+ 00000025  E8 00000000 E		call	CrLf
+ 0000002A  BA 0000001C R		mov		edx, OFFSET myName
+ 0000002F  E8 00000000 E		call	WriteString
+ 00000034  E8 00000000 E		call	CrLf
+ 00000039  C3				ret
+ 0000003A			Introduction ENDP
 
 
 				;--------------------------------------------------
- 00000030			GetUserData PROC
+ 0000003A			GetUserData PROC
 
 				; Prompts user to enter a number N in [1, 400], to
 				; calculate and display the first N composite numbers.
 				; Returns: EAX = valid input, in [1, 400]
 				;--------------------------------------------------
- 00000030  BA 00000039 R		mov		edx, OFFSET inputPrompt
- 00000035  E8 00000000 E		call	WriteString
+ 0000003A  BA 00000039 R		mov		edx, OFFSET inputPrompt
+ 0000003F  E8 00000000 E		call	WriteString
 
- 0000003A  E8 00000000 E	readInput:  call ReadInt	;Read integer entered by user
- 0000003F  E8 0000000F			call	Validate
- 00000044  74 0C			jz		inputValid
+ 00000044  E8 00000000 E	readInput:  call ReadInt		;Read integer entered by user
+ 00000049  E8 00000012			call	Validate
+ 0000004E  74 0C			jz		inputValid
 
 					;entered number not in [1, 400]. Print error message, and try again.
- 00000046  BA 0000008D R		mov		edx, OFFSET errInputPrompt
- 0000004B  E8 00000000 E		call	WriteString
- 00000050  EB E8			jmp		readInput
+ 00000050  BA 0000008D R		mov		edx, OFFSET errInputPrompt
+ 00000055  E8 00000000 E		call	WriteString
+ 0000005A  EB E8			jmp		readInput
 
- 00000052  C3			inputValid:	ret
- 00000053			GetUserData ENDP
-
+ 0000005C			inputValid:	
+					;mov		printTotal, eax		;Save number of composites user wants us to print
+ 0000005C  C3				ret
+ 0000005D			GetUserData ENDP
 
 
 				;--------------------------------------------------
- 00000053			Validate PROC
+ 0000005D			Initialize PROC
+
+				; Initializes registers to computing the first N
+				; composite numbers.
+				; Pre-conditions: EAX is number of composite numbers
+				; to print.
+				;--------------------------------------------------
+ 0000005D  8B C8			mov		ecx, eax
+					;dec		ecx
+ 0000005F  C3				ret
+
+ 00000060			Initialize ENDP
+
+
+				;--------------------------------------------------
+ 00000060			Validate PROC
 
 				; Validates that user input is in [1, 400].
 				; Receives: EAX = integer entered by user
@@ -139,17 +178,127 @@ Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/10/18 11:13:37
 				; otherwise, ZF=0
 				;--------------------------------------------------
 
- 00000053  83 F8 01			cmp		eax, LOWER_LIMIT
- 00000056  72 0C			jb		notValid			;ZF=0 if dest < source
- 00000058  3D 00000190			cmp		eax, UPPER_LIMIT
- 0000005D  77 05			ja		notValid			;ZF=0 if dest > source
- 0000005F  A9 00000000			test	eax, 0				;ZF = 1
+ 00000060  83 F8 01			cmp		eax, LOWER_LIMIT
+ 00000063  72 0C			jb		notValid			;#2ZF=0 if dest < source
+ 00000065  3D 00000190			cmp		eax, UPPER_LIMIT
+ 0000006A  77 05			ja		notValid			;#2ZF=0 if dest > source
+ 0000006C  A9 00000000			test	eax, 0				;#5ZF = 1
 
- 00000064  C3			notValid:	ret					;ZF = 0
- 00000065			Validate ENDP
+ 00000071  C3			notValid: ret					;#?ZF = 0
+ 00000072			Validate ENDP
+
+
+				;--------------------------------------------------
+ 00000072			IsComposite PROC
+
+				; Checks if the current number in EAX is composite.
+				; Receives: EAX = number to check
+				; Returns: ZF=1 if number in EAX is composite;
+				; otherwise, ZF=0
+				;
+				; USES ebx, edx, esi
+				;--------------------------------------------------
+
+					;Check if currNumber is divisible by any number in [2, currNumber], other than itself.
+ 00000072  BB 00000002			mov		ebx, 2
+
+				;check if currNumber is divisible by next number in [2, currNumber] sequence
+ 00000077			next:	
+ 00000077  8B F0			mov		esi, eax
+ 00000079  3B C3			cmp		eax, ebx
+ 0000007B  74 0E			je		no			;Not divisible by anything in [2, currNum], so not composite.
+
+ 0000007D  33 D2			xor		edx, edx
+ 0000007F  F7 F3			div		ebx
+ 00000081  83 FA 00			cmp		edx, 0		;is divisible
+ 00000084  74 08			je		done	
+
+ 00000086  43				inc		ebx			;set EBX to next divisor in [2, currNum]
+ 00000087  8B C6			mov		eax, esi
+ 00000089  EB EC			jmp		next
+
+ 0000008B			no:
+ 0000008B  83 FA 00			cmp edx, 0			;set ZF = 0. We know EDX is never 0 here, otherwise, it would be composite.
+
+ 0000008E  C3			done: ret
+
+ 0000008F			IsComposite ENDP
+
+
+				;--------------------------------------------------
+ 0000008F			GetNextComposite PROC
+				; Checks if currNum is a composite number.
+				; Returns:  currNum = the next composite number.
+				;--------------------------------------------------
+
+ 0000008F			checkNext:
+ 0000008F  FF 05 000000B5 R		inc		currNum
+ 00000095  A1 000000B5 R		mov		eax, currNum
+ 0000009A  E8 FFFFFFD3			call	IsComposite
+ 0000009F  75 EE			jnz		checkNext
+ 000000A1  C3				ret
+
+ 000000A2			GetNextComposite ENDP
+
+
+
+				;--------------------------------------------------
+ 000000A2			PrintComposites PROC
+				; Prints the first N composite numbers.
+
+				; Pre-conditions: ECX=N, the number of composite
+				; numbers to print.
+				;--------------------------------------------------
+
+ 000000A2			doNext:
+ 000000A2  E8 FFFFFFE8			call	GetNextComposite
+ 000000A7  E8 00000003			call	Print
+ 000000AC  E2 F4			loop	doNext
+ 000000AE  C3				ret
+
+ 000000AF			PrintComposites ENDP
+
+
+				;--------------------------------------------------
+ 000000AF			Print PROC
+				; Prints currNum
+				;--------------------------------------------------
+ 000000AF  BA 000000C1 R		mov		edx, OFFSET gutter
+ 000000B4  E8 00000000 E		call	WriteString
+
+ 000000B9  50				push	eax		;Preserve registers.
+ 000000BA  53				push	ebx
+ 000000BB  52				push	edx
+
+					;Print current composite number.
+ 000000BC  A1 000000B5 R		mov		eax, currNum
+ 000000C1  E8 00000000 E		call	WriteDec
+ 000000C6  FF 05 000000BD R		inc		printCount
+
+					;Check if we need a new line - print count divisible by 10.
+ 000000CC  A1 000000BD R		mov		eax, printCount
+ 000000D1  33 D2			xor		edx, edx
+ 000000D3  BB 0000000A			mov		ebx, 10
+ 000000D8  F7 F3			div		ebx
+
+ 000000DA  83 FA 00			cmp		edx, 0
+ 000000DD  75 05			jne		done
+
+					;print a new line
+ 000000DF  E8 00000000 E		call	CrLf
+
+ 000000E4			done:
+ 000000E4  5A				pop		edx
+ 000000E5  5B				pop		ebx
+ 000000E6  58				pop		eax
+ 000000E7  C3				ret
+
+ 000000E8			Print ENDP
+
+
 
 				END main
-Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/10/18 11:13:37
+Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/10/18 14:51:40
 Program 4     (program4.asm				     Symbols 2 - 1
 
 
@@ -243,8 +392,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 000000B5 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000065 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000000ED Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000000E8 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -278,22 +427,29 @@ GetLastError . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 GetLocalTime . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetMaxXY . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetMseconds  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+GetNextComposite . . . . . . . .	P Near	 0000008F _TEXT	Length= 00000013 Public STDCALL
+  checkNext  . . . . . . . . . .	L Near	 0000008F _TEXT	
 GetNumberOfConsoleInputEvents  .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetProcessHeap . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetStdHandle . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetSystemTime  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTextColor . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 GetTickCount . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-GetUserData  . . . . . . . . . .	P Near	 00000030 _TEXT	Length= 00000023 Public STDCALL
-  readInput  . . . . . . . . . .	L Near	 0000003A _TEXT	
-  inputValid . . . . . . . . . .	L Near	 00000052 _TEXT	
+GetUserData  . . . . . . . . . .	P Near	 0000003A _TEXT	Length= 00000023 Public STDCALL
+  readInput  . . . . . . . . . .	L Near	 00000044 _TEXT	
+  inputValid . . . . . . . . . .	L Near	 0000005C _TEXT	
 Gotoxy . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapAlloc  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapCreate . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapDestroy  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapFree . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 HeapSize . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Introduction . . . . . . . . . .	P Near	 00000011 _TEXT	Length= 0000001F Public STDCALL
+Initialize . . . . . . . . . . .	P Near	 0000005D _TEXT	Length= 00000003 Public STDCALL
+Introduction . . . . . . . . . .	P Near	 0000001B _TEXT	Length= 0000001F Public STDCALL
+IsComposite  . . . . . . . . . .	P Near	 00000072 _TEXT	Length= 0000001D Public STDCALL
+  next . . . . . . . . . . . . .	L Near	 00000077 _TEXT	
+  no . . . . . . . . . . . . . .	L Near	 0000008B _TEXT	
+  done . . . . . . . . . . . . .	L Near	 0000008E _TEXT	
 IsDigit  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 LocalFree  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 MessageBoxA  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -303,6 +459,10 @@ OpenInputFile  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 ParseDecimal32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ParseInteger32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 PeekConsoleInputA  . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+PrintComposites  . . . . . . . .	P Near	 000000A2 _TEXT	Length= 0000000D Public STDCALL
+  doNext . . . . . . . . . . . .	L Near	 000000A2 _TEXT	
+Print  . . . . . . . . . . . . .	P Near	 000000AF _TEXT	Length= 00000039 Public STDCALL
+  done . . . . . . . . . . . . .	L Near	 000000E4 _TEXT	
 Random32 . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 RandomRange  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Randomize  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -337,8 +497,8 @@ Str_length . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 Str_trim . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Str_ucase  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 SystemTimeToFileTime . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Validate . . . . . . . . . . . .	P Near	 00000053 _TEXT	Length= 00000012 Public STDCALL
-  notValid . . . . . . . . . . .	L Near	 00000064 _TEXT	
+Validate . . . . . . . . . . . .	P Near	 00000060 _TEXT	Length= 00000012 Public STDCALL
+  notValid . . . . . . . . . . .	L Near	 00000071 _TEXT	
 WaitMsg  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteBinB  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteBin . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -357,7 +517,7 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000011 Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 0000001B Public STDCALL
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -581,11 +741,13 @@ WriteConsole . . . . . . . . . .	Text   	 WriteConsoleA
 black  . . . . . . . . . . . . .	Number	 00000000h   
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
+currNum  . . . . . . . . . . . .	DWord	 000000B5 _DATA	
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
 errInputPrompt . . . . . . . . .	Byte	 0000008D _DATA	
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
+gutter . . . . . . . . . . . . .	Byte	 000000C1 _DATA	
 inputPrompt  . . . . . . . . . .	Byte	 00000039 _DATA	
 lightBlue  . . . . . . . . . . .	Number	 00000009h   
 lightCyan  . . . . . . . . . . .	Number	 0000000Bh   
@@ -595,11 +757,15 @@ lightMagenta . . . . . . . . . .	Number	 0000000Dh
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
 myName . . . . . . . . . . . . .	Byte	 0000001C _DATA	
+noStr  . . . . . . . . . . . . .	Byte	 000000D7 _DATA	
+printCount . . . . . . . . . . .	DWord	 000000BD _DATA	
+printTotal . . . . . . . . . . .	DWord	 000000B9 _DATA	
 programName  . . . . . . . . . .	Byte	 00000000 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
+yesStr . . . . . . . . . . . . .	Byte	 000000C5 _DATA	
 
 	   0 Warnings
 	   0 Errors
