@@ -166,10 +166,10 @@ PrintComposites PROC
 ; Uses: ECX
 ;--------------------------------------------------
 
-	mov		ecx, eax
+	mov		ecx, eax		
 doNext:
-	call	GetNextComposite
-	call	Print
+	call	GetNextComposite	;sets currNum = next composite in series
+	call	Print				
 	loop	doNext
 	ret
 
@@ -198,12 +198,15 @@ countDigit:
 	cmp		eax, 0
 	jne		countDigit
 
-	;Print spaces equal to (3-num digits) to align
+	;Print spaces equal to (3-num digits) to right-align output.
+
+	;If number already has 3 digits, no padding needed - it is already right-aligned.
+	cmp		ecx, 3
+	je		printNumber
+
+	;Set ECX to number of spaces we need to print.
 	neg		ecx
 	add		ecx, 3
-
-	cmp		ecx, 0
-	je		printNumber		;If number has 3 digits, no padding needed.
 
 printSpace:
 	mov		edx, OFFSET space

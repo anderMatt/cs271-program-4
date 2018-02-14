@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:58:56
+Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 21:04:55
 Program 4     (program4.asm				     Page 1 - 1
 
 
@@ -224,10 +224,10 @@ Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:58:56
 				; Uses: ECX
 				;--------------------------------------------------
 
- 000000A4  8B C8			mov		ecx, eax
+ 000000A4  8B C8			mov		ecx, eax		
  000000A6			doNext:
- 000000A6  E8 FFFFFFE6			call	GetNextComposite
- 000000AB  E8 00000003			call	Print
+ 000000A6  E8 FFFFFFE6			call	GetNextComposite	;sets currNum = next composite in series
+ 000000AB  E8 00000003			call	Print				
  000000B0  E2 F4			loop	doNext
  000000B2  C3				ret
 
@@ -256,12 +256,15 @@ Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:58:56
  000000C8  83 F8 00			cmp		eax, 0
  000000CB  75 F6			jne		countDigit
 
-					;Print spaces equal to (3-num digits) to align
- 000000CD  F7 D9			neg		ecx
- 000000CF  83 C1 03			add		ecx, 3
+					;Print spaces equal to (3-num digits) to right-align output.
 
- 000000D2  83 F9 00			cmp		ecx, 0
- 000000D5  74 0C			je		printNumber		;If number has 3 digits, no padding needed.
+					;If number already has 3 digits, no padding needed - it is already right-aligned.
+ 000000CD  83 F9 03			cmp		ecx, 3
+ 000000D0  74 11			je		printNumber
+
+					;Set ECX to number of spaces we need to print.
+ 000000D2  F7 D9			neg		ecx
+ 000000D4  83 C1 03			add		ecx, 3
 
  000000D7			printSpace:
  000000D7  BA 000000C7 R		mov		edx, OFFSET space
@@ -309,7 +312,7 @@ Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:58:56
  0000012C			Farewell ENDP
 
 				END main
-Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:58:56
+Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 21:04:55
 Program 4     (program4.asm				     Symbols 2 - 1
 
 
