@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:35:15
+Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:58:56
 Program 4     (program4.asm				     Page 1 - 1
 
 
@@ -76,8 +76,10 @@ Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:35:15
  000000B9 00000000		printTotal		DWORD	?		;number of composite numbers user wants us to print
  000000BD 00000000		printCount		DWORD	0		;number of composite numbers we have already printed.
 
- 000000C1 20 20 20 00		gutter			BYTE	"   ",0	
- 000000C5 47 6F 6F 64 62	goodbye			BYTE	"Goodbye!", 0
+ 000000C1 20 20 20 20 20	gutter			BYTE	"     ",0	
+	   00
+ 000000C7 20 00			space			BYTE	" ",0
+ 000000C9 47 6F 6F 64 62	goodbye			BYTE	"Goodbye!", 0
 	   79 65 21 00
 
 
@@ -87,11 +89,12 @@ Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:35:15
  00000000  E8 00000016			call	Introduction
  00000005  E8 00000030			call	GetUserData
  0000000A  E8 00000095			call	PrintComposites
- 0000000F  E8 000000D8			call	Farewell
+ 0000000F  E8 00000103			call	Farewell
 
 					exit	; exit to operating system
  00000014  6A 00	   *	    push   +000000000h
  00000016  E8 00000000 E   *	    call   ExitProcess
+
  0000001B			main ENDP
 
 
@@ -233,55 +236,80 @@ Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:35:15
 
 				;--------------------------------------------------
  000000B3			Print PROC
-				; Prints currNum
+				; Prints currNum. Right-aligns by left-
+				; padding with spaces, equal to (3-number of digits)
+				; Uses: eax, ebx, ecx, edx
 				;--------------------------------------------------
- 000000B3  BA 000000C1 R		mov		edx, OFFSET gutter
- 000000B8  E8 00000000 E		call	WriteString
 
- 000000BD  50				push	eax		;Preserve registers.
- 000000BE  53				push	ebx
- 000000BF  52				push	edx
+ 000000B3  60				pushad			;Preserve registers
 
+					;Count number of digits in number being printed, to align output.
+					;This is done by continually dividing by 10, until reaching 0.
+ 000000B4  A1 000000B5 R		mov		eax, currNum
+ 000000B9  BB 0000000A			mov		ebx, 10
+ 000000BE  B9 00000000			mov		ecx, 0	;Accumulator for number of digits
+
+ 000000C3			countDigit:
+ 000000C3  41				inc		ecx
+ 000000C4  33 D2			xor		edx, edx
+ 000000C6  F7 F3			div		ebx
+ 000000C8  83 F8 00			cmp		eax, 0
+ 000000CB  75 F6			jne		countDigit
+
+					;Print spaces equal to (3-num digits) to align
+ 000000CD  F7 D9			neg		ecx
+ 000000CF  83 C1 03			add		ecx, 3
+
+ 000000D2  83 F9 00			cmp		ecx, 0
+ 000000D5  74 0C			je		printNumber		;If number has 3 digits, no padding needed.
+
+ 000000D7			printSpace:
+ 000000D7  BA 000000C7 R		mov		edx, OFFSET space
+ 000000DC  E8 00000000 E		call	WriteString
+ 000000E1  E2 F4			loop	printSpace
+
+ 000000E3			printNumber:
 					;Print current composite number.
- 000000C0  A1 000000B5 R		mov		eax, currNum
- 000000C5  E8 00000000 E		call	WriteDec
- 000000CA  FF 05 000000BD R		inc		printCount
+ 000000E3  A1 000000B5 R		mov		eax, currNum
+ 000000E8  E8 00000000 E		call	WriteDec
+ 000000ED  FF 05 000000BD R		inc		printCount
+
+ 000000F3  BA 000000C1 R		mov		edx, OFFSET gutter
+ 000000F8  E8 00000000 E		call	WriteString
 
 					;Check if we need a new line - print count divisible by 10.
- 000000D0  A1 000000BD R		mov		eax, printCount
- 000000D5  33 D2			xor		edx, edx
- 000000D7  BB 0000000A			mov		ebx, 10
- 000000DC  F7 F3			div		ebx
+ 000000FD  A1 000000BD R		mov		eax, printCount
+ 00000102  33 D2			xor		edx, edx
+ 00000104  BB 0000000A			mov		ebx, 10
+ 00000109  F7 F3			div		ebx
 
- 000000DE  83 FA 00			cmp		edx, 0
- 000000E1  75 05			jne		done
+ 0000010B  83 FA 00			cmp		edx, 0
+ 0000010E  75 05			jne		done
 
-					;print a new line
- 000000E3  E8 00000000 E		call	CrLf
+					;10 numbers exist on current line. Move to next line.
+ 00000110  E8 00000000 E		call	CrLf
 
- 000000E8			done:
- 000000E8  5A				pop		edx
- 000000E9  5B				pop		ebx
- 000000EA  58				pop		eax
- 000000EB  C3				ret
+ 00000115			done:
+ 00000115  61				popad		
+ 00000116  C3				ret
 
- 000000EC			Print ENDP
+ 00000117			Print ENDP
 
 
 				;--------------------------------------------------
- 000000EC			Farewell PROC
-				; Prints farewell message to the user, and exits
+ 00000117			Farewell PROC
+				; Prints farewell message to the user.
 				;--------------------------------------------------
- 000000EC  E8 00000000 E		call	CrLf
- 000000F1  BA 000000C5 R		mov		edx, OFFSET goodbye
- 000000F6  E8 00000000 E		call	WriteString
- 000000FB  E8 00000000 E		call	CrLf
- 00000100  C3				ret
+ 00000117  E8 00000000 E		call	CrLf
+ 0000011C  BA 000000C9 R		mov		edx, OFFSET goodbye
+ 00000121  E8 00000000 E		call	WriteString
+ 00000126  E8 00000000 E		call	CrLf
+ 0000012B  C3				ret
 
- 00000101			Farewell ENDP
+ 0000012C			Farewell ENDP
 
 				END main
-Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:35:15
+Microsoft (R) Macro Assembler Version 14.12.25831.0	    02/13/18 20:58:56
 Program 4     (program4.asm				     Symbols 2 - 1
 
 
@@ -375,8 +403,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 000000CE Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000101 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000000D2 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 0000012C Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -393,7 +421,7 @@ Delay  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 DumpMem  . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 DumpRegs . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 ExitProcess  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-Farewell . . . . . . . . . . . .	P Near	 000000EC _TEXT	Length= 00000015 Public STDCALL
+Farewell . . . . . . . . . . . .	P Near	 00000117 _TEXT	Length= 00000015 Public STDCALL
 FileTimeToDosDateTime  . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 FileTimeToSystemTime . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 FlushConsoleInputBuffer  . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -444,8 +472,11 @@ ParseInteger32 . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 PeekConsoleInputA  . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 PrintComposites  . . . . . . . .	P Near	 000000A4 _TEXT	Length= 0000000F Public STDCALL
   doNext . . . . . . . . . . . .	L Near	 000000A6 _TEXT	
-Print  . . . . . . . . . . . . .	P Near	 000000B3 _TEXT	Length= 00000039 Public STDCALL
-  done . . . . . . . . . . . . .	L Near	 000000E8 _TEXT	
+Print  . . . . . . . . . . . . .	P Near	 000000B3 _TEXT	Length= 00000064 Public STDCALL
+  countDigit . . . . . . . . . .	L Near	 000000C3 _TEXT	
+  printSpace . . . . . . . . . .	L Near	 000000D7 _TEXT	
+  printNumber  . . . . . . . . .	L Near	 000000E3 _TEXT	
+  done . . . . . . . . . . . . .	L Near	 00000115 _TEXT	
 Random32 . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 RandomRange  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 Randomize  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
@@ -728,7 +759,7 @@ currNum  . . . . . . . . . . . .	DWord	 000000B5 _DATA
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
 errInputPrompt . . . . . . . . .	Byte	 0000008D _DATA	
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
-goodbye  . . . . . . . . . . . .	Byte	 000000C5 _DATA	
+goodbye  . . . . . . . . . . . .	Byte	 000000C9 _DATA	
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
 gutter . . . . . . . . . . . . .	Byte	 000000C1 _DATA	
@@ -745,6 +776,7 @@ printCount . . . . . . . . . . .	DWord	 000000BD _DATA
 printTotal . . . . . . . . . . .	DWord	 000000B9 _DATA	
 programName  . . . . . . . . . .	Byte	 00000000 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
+space  . . . . . . . . . . . . .	Byte	 000000C7 _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   

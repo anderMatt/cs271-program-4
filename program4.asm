@@ -22,7 +22,8 @@ currNum			DWORD	3
 printTotal		DWORD	?		;number of composite numbers user wants us to print
 printCount		DWORD	0		;number of composite numbers we have already printed.
 
-gutter			BYTE	"   ",0	
+gutter			BYTE	"     ",0	
+space			BYTE	" ",0
 goodbye			BYTE	"Goodbye!", 0
 
 
@@ -35,6 +36,7 @@ main PROC
 	call	Farewell
 
 	exit	; exit to operating system
+
 main ENDP
 
 
@@ -176,19 +178,46 @@ PrintComposites ENDP
 
 ;--------------------------------------------------
 Print PROC
-; Prints currNum
+; Prints currNum. Right-aligns by left-
+; padding with spaces, equal to (3-number of digits)
+; Uses: eax, ebx, ecx, edx
 ;--------------------------------------------------
-	mov		edx, OFFSET gutter
+
+	pushad			;Preserve registers
+
+	;Count number of digits in number being printed, to align output.
+	;This is done by continually dividing by 10, until reaching 0.
+	mov		eax, currNum
+	mov		ebx, 10
+	mov		ecx, 0	;Accumulator for number of digits
+
+countDigit:
+	inc		ecx
+	xor		edx, edx
+	div		ebx
+	cmp		eax, 0
+	jne		countDigit
+
+	;Print spaces equal to (3-num digits) to align
+	neg		ecx
+	add		ecx, 3
+
+	cmp		ecx, 0
+	je		printNumber		;If number has 3 digits, no padding needed.
+
+printSpace:
+	mov		edx, OFFSET space
 	call	WriteString
+	loop	printSpace
 
-	push	eax		;Preserve registers.
-	push	ebx
-	push	edx
-
+printNumber:
 	;Print current composite number.
 	mov		eax, currNum
 	call	WriteDec
 	inc		printCount
+
+	mov		edx, OFFSET gutter
+	call	WriteString
 
 	;Check if we need a new line - print count divisible by 10.
 	mov		eax, printCount
@@ -199,13 +228,11 @@ Print PROC
 	cmp		edx, 0
 	jne		done
 
-	;print a new line
+	;10 numbers exist on current line. Move to next line.
 	call	CrLf
 
 done:
-	pop		edx
-	pop		ebx
-	pop		eax
+	popad		
 	ret
 
 Print ENDP
@@ -213,7 +240,7 @@ Print ENDP
 
 ;--------------------------------------------------
 Farewell PROC
-; Prints farewell message to the user, and exits
+; Prints farewell message to the user.
 ;--------------------------------------------------
 	call	CrLf
 	mov		edx, OFFSET goodbye
