@@ -1,18 +1,17 @@
 TITLE Program 4     (program4.asm)
 
 ; Author: Matthew Anderson		   anderma8@oregonstate.edu
-; CS 271 Program 4                 Date: February 10, 2018
-; Description:
+; CS 271 Program 4                 Date: February 13, 2018
+; Description: Prompts user to enter a value for N in [1,400], and then computes
+; and displays the first N composite numbers. Validates that N is in the valid
+; range.
 
 INCLUDE Irvine32.inc
-
-; (insert constant definitions here)
 
 LOWER_LIMIT = 1			;smallest value accepted as valid input 	
 UPPER_LIMIT = 400		;largest value accepted as valid input
 
 .data
-; (insert variable definitions here)
 programName		BYTE	"Composite Number Calculator",0
 myName			BYTE	"Written by: Matthew Anderson",0
 
@@ -27,27 +26,17 @@ gutter			BYTE	"   ",0
 goodbye			BYTE	"Goodbye!", 0
 
 
-;---------------------------
-; FOR TESTING
-;---------------------------
-yesStr BYTE "that IS composite", 0
-noStr BYTE	"that is NOT composite", 0
-
-
 .code
 main PROC
 
-; (insert executable instructions here)
 	call	Introduction
 	call	GetUserData
-	call	Initialize
 	call	PrintComposites
 	call	Farewell
 
 	exit	; exit to operating system
 main ENDP
 
-; (insert additional procedures here)
 
 ;---------------------------------------------
 Introduction PROC
@@ -71,7 +60,9 @@ GetUserData PROC
 
 ; Prompts user to enter a number N in [1, 400], to
 ; calculate and display the first N composite numbers.
-; Returns: EAX = valid input, in [1, 400]
+; If user enters an invalid number, they are prompted
+; again.
+; Returns: EAX = entered number, in [1,400]
 ;--------------------------------------------------
 	mov		edx, OFFSET inputPrompt
 	call	WriteString
@@ -86,24 +77,9 @@ readInput:  call ReadInt		;Read integer entered by user
 	jmp		readInput
 
 inputValid:	
-	;mov		printTotal, eax		;Save number of composites user wants us to print
+	mov		printTotal, eax		;Save number of composites user wants us to print
 	ret
 GetUserData ENDP
-
-
-;--------------------------------------------------
-Initialize PROC
-
-; Initializes registers to computing the first N
-; composite numbers.
-; Pre-conditions: EAX is number of composite numbers
-; to print.
-;--------------------------------------------------
-	mov		ecx, eax
-	;dec		ecx
-	ret
-
-Initialize ENDP
 
 
 ;--------------------------------------------------
@@ -183,10 +159,12 @@ GetNextComposite ENDP
 PrintComposites PROC
 ; Prints the first N composite numbers.
 
-; Pre-conditions: ECX=N, the number of composite
-; numbers to print.
+; Pre-conditions: EAX=N, the number of composite
+; numbers to compute and print.
+; Uses: ECX
 ;--------------------------------------------------
 
+	mov		ecx, eax
 doNext:
 	call	GetNextComposite
 	call	Print
@@ -244,4 +222,5 @@ Farewell PROC
 	ret
 
 Farewell ENDP
+
 END main
