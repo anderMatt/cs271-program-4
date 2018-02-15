@@ -1,7 +1,7 @@
 TITLE Program 4     (program4.asm)
 
 ; Author: Matthew Anderson		   anderma8@oregonstate.edu
-; CS 271 Program 4                 Date: February 13, 2018
+; CS 271 Program 4                 Date: February 15, 2018
 ; Description: Prompts user to enter a value for N in [1,400], and then computes
 ; and displays the first N composite numbers. Validates that N is in the valid
 ; range.
@@ -25,6 +25,8 @@ printCount		DWORD	0		;number of composite numbers we have already printed.
 gutter			BYTE	"     ",0	
 space			BYTE	" ",0
 goodbye			BYTE	"Goodbye!", 0
+
+ec1				BYTE	"**EC: Align the output columns.",0
 
 
 .code
@@ -53,7 +55,12 @@ Introduction PROC
 	mov		edx, OFFSET myName
 	call	WriteString
 	call	CrLf
+
+	mov		edx, OFFSET ec1;
+	call	WriteString
+	call	CrLf
 	ret
+
 Introduction ENDP
 
 
@@ -94,12 +101,12 @@ Validate PROC
 ;--------------------------------------------------
 
 	cmp		eax, LOWER_LIMIT
-	jb		notValid			;#2ZF=0 if dest < source
+	jb		notValid			;ZF=0 if dest < source
 	cmp		eax, UPPER_LIMIT
-	ja		notValid			;#2ZF=0 if dest > source
-	test	eax, 0				;#5ZF = 1
+	ja		notValid			;ZF=0 if dest > source
+	test	eax, 0				;ZF = 1
 
-notValid: ret					;#?ZF = 0
+notValid: ret					;ZF = 0
 Validate ENDP
 
 
@@ -147,7 +154,7 @@ GetNextComposite PROC
 ;--------------------------------------------------
 
 checkNext:
-	inc		currNum
+	inc		currNum		;Start checking with next integer.
 	mov		eax, currNum
 	call	IsComposite
 	jnz		checkNext
